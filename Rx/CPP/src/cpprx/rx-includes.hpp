@@ -89,6 +89,7 @@
 
 #include "rx-util.hpp"
 #include "rx-base.hpp"
+#include "Observable.hpp"
 #include "rx-scheduler.hpp"
 #include "rx-windows.hpp"
 #include "rx-operators.hpp"

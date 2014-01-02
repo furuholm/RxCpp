@@ -2,6 +2,7 @@
 
 #pragma once
 #include "../rx-operators.hpp"
+#include "../Observable.hpp"
 
 #if !defined(CPPRX_RX_OPERATORS_RETURN_HPP)
 #define CPPRX_RX_OPERATORS_RETURN_HPP
@@ -65,14 +66,17 @@ namespace rxcpp
             }
         };
     }
+
     template <class T>
-    std::shared_ptr<Observable<T>> Return(
-            T value,
-            Scheduler::shared scheduler = nullptr
-        )
+    Observable<T> just(
+        T value, 
+        Scheduler::shared scheduler = nullptr)
     {
-        return std::make_shared<detail::ReturnObservable<T>>(std::move(value), std::move(scheduler));
+        auto producer = std::make_shared<detail::ReturnObservable<T>>(std::move(value), std::move(scheduler));
+
+        return Observable<T>(producer->createOnSubscribeFunc());
     }
+
 }
 
 #endif

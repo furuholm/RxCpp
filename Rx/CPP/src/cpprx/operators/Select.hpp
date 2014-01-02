@@ -18,7 +18,7 @@ namespace rxcpp
             typedef std::shared_ptr<Self> Parent;
             typedef std::function<Tout(Tin)> Selector;
 
-            std::shared_ptr<Observable<Tin>> source;
+            OnSubscribeFunc<Tin> source;
             Selector selector;
 
             class _ : public Sink<_, Tout>, public Observer<Tin>
@@ -62,12 +62,12 @@ namespace rxcpp
             typedef Producer<Self, Tout> ProducerBase;
         public:
 
-            SelectObservable(const std::shared_ptr<Observable<Tin>>& source, Selector selector) :
+            SelectObservable(OnSubscribeFunc<Tin> source, Selector selector) :
                 ProducerBase([this](Parent parent, std::shared_ptr < Observer < Tout >> observer, Disposable && cancel, typename ProducerBase::SetSink setSink) -> Disposable
                 {
                     auto sink = std::shared_ptr<Self::_>(new Self::_(parent, observer, std::move(cancel)));
                     setSink(sink->GetDisposable());
-                    return this->source->Subscribe(sink);
+                    return this->source(sink);
                 }),
                 source(source),
                 selector(std::move(selector))
@@ -75,14 +75,16 @@ namespace rxcpp
             }
         };
     }
+
     template <class Tin, class S>
     auto Select(
-        const std::shared_ptr<Observable<Tin>>& source,
+        OnSubscribeFunc<Tin> source,
         S selector
-    ) -> const std::shared_ptr<Observable<typename std::result_of<S(const Tin&)>::type>>
+    ) -> const Observable<typename std::result_of<S(const Tin&)>::type>
     {
         typedef typename std::result_of<S(const Tin&)>::type Tout;
-        return std::make_shared<detail::SelectObservable<Tin, Tout>>(source, std::move(selector));
+        auto obs = std::make_shared<detail::SelectObservable<Tin, Tout>>(std::move(source), std::move(selector));
+        return Observable<Tout>(obs->createOnSubscribeFunc());
     }
 }
 

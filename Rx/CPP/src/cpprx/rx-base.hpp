@@ -51,12 +51,11 @@ namespace rxcpp
     };
     inline void swap(Disposable& lhs, Disposable& rhs) {lhs.swap(rhs);}
 
+    template <typename T>
+    using OnSubscribeFunc = std::function<Disposable(std::shared_ptr<Observer<T>> observer)>;
+
     template <class T>
-    struct Observable
-    {
-        virtual Disposable Subscribe(std::shared_ptr<Observer<T>> observer) = 0;
-        virtual ~Observable() {}
-    };
+    struct Observable;
 
     template <class K, class T>
     struct GroupedObservable : Observable<T>

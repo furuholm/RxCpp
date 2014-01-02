@@ -2,6 +2,7 @@
 
 #pragma once
 #include "../rx-operators.hpp"
+#include "../Observable.hpp"
 
 #if !defined(CPPRX_RX_OPERATORS_THROW_HPP)
 #define CPPRX_RX_OPERATORS_THROW_HPP
@@ -70,7 +71,7 @@ namespace rxcpp
         struct throw_instance_tag{};
 
         template <class T>
-        std::shared_ptr<Observable<T>> make_throw(
+        std::shared_ptr<ThrowObservable<T>> make_throw(
             throw_ptr_tag&&,
             std::exception_ptr exception,
             Scheduler::shared scheduler = nullptr
@@ -80,7 +81,7 @@ namespace rxcpp
         }
 
         template <class T, class E>
-        std::shared_ptr<Observable<T>> make_throw(
+        std::shared_ptr<ThrowObservable<T>> make_throw(
             throw_instance_tag&&,
             E e,
             Scheduler::shared scheduler = nullptr
@@ -91,6 +92,7 @@ namespace rxcpp
             return std::make_shared<detail::ThrowObservable<T>>(std::move(exception), std::move(scheduler));
         }
     }
+    
     template <class T, class E>
     std::shared_ptr<Observable<T>> Throw(
         E e,
@@ -99,6 +101,18 @@ namespace rxcpp
     {
         return detail::make_throw<T>(typename std::conditional<std::is_same<std::exception_ptr, typename std::decay<E>::type>::value, detail::throw_ptr_tag, detail::throw_instance_tag>::type(), std::forward<E>(e), std::move(scheduler));
     }
+
+    template <class T, class E>
+    Observable<T> error(
+        E e,
+        Scheduler::shared scheduler = nullptr
+        )
+    {
+        auto producer = detail::make_throw<T>(typename std::conditional<std::is_same<std::exception_ptr, typename std::decay<E>::type>::value, detail::throw_ptr_tag, detail::throw_instance_tag>::type(), std::forward<E>(e), std::move(scheduler));
+
+        return Observable<T>(producer->createOnSubscribeFunc());
+    }
+
 }
 
 #endif

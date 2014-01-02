@@ -249,7 +249,7 @@ namespace rxcpp
         };
         
         template<class Derived, class T>
-        class Producer : public std::enable_shared_from_this<Derived>, public Observable<T>
+        class Producer : public std::enable_shared_from_this<Derived> 
         {
         public:
             typedef std::function<void(Disposable)> SetSink;
@@ -265,6 +265,14 @@ namespace rxcpp
             Producer(Run run) : 
                 run(std::move(run))
             {
+            }
+
+            OnSubscribeFunc<T> createOnSubscribeFunc()
+            {
+                auto that = this->shared_from_this();
+                return [=](std::shared_ptr<Observer<T>> observer) {
+                    return that->Subscribe(std::move(observer));
+                };
             }
 
             virtual Disposable Subscribe(std::shared_ptr<Observer<T>> observer)

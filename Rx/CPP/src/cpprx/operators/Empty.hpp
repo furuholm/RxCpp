@@ -63,11 +63,12 @@ namespace rxcpp
         };
     }
     template <class T>
-    std::shared_ptr<Observable<T>> Empty(
+    Observable<T> empty(
             Scheduler::shared scheduler = nullptr
         )
     {
-        return std::make_shared<detail::EmptyObservable<T>>(std::move(scheduler));
+        auto producer = std::make_shared<detail::EmptyObservable<T>>(std::move(scheduler));
+        return Observable<T>(producer->createOnSubscribeFunc());
     }
 }
 

@@ -738,6 +738,45 @@ namespace rxcpp
         using Base::Start;
 
         template<class T>
+        std::shared_ptr<TestableObserver<T>> Start(std::function<Observable<T>()> create, long created, long subscribed, long disposed)
+        {
+            auto observer = CreateObserver<T>();
+
+            struct State
+            {
+                Observable<T> source;
+                SerialDisposable subscription;
+                std::shared_ptr<TestableObserver<T>> observer;
+            };
+            auto state = std::make_shared<State>();
+
+            state->observer = observer;
+
+            ScheduleAbsolute(created, [create, state](Scheduler::shared scheduler) -> Disposable {
+                state->source = create(); return Disposable::Empty(); });
+            ScheduleAbsolute(subscribed, [state](Scheduler::shared scheduler) -> Disposable {
+                state->subscription.Set(state->source.Subscribe(state->observer)); return Disposable::Empty(); });
+            ScheduleAbsolute(disposed, [state](Scheduler::shared scheduler) -> Disposable {
+                state->subscription.Dispose(); return Disposable::Empty(); });
+
+            Start();
+
+            return observer;
+        }
+
+        template<class T>
+        std::shared_ptr<TestableObserver<T>> Start(std::function<Observable<T>()> create, long disposed)
+        {
+            return Start(create, Created, Subscribed, disposed);
+        }
+
+        template<class T>
+        std::shared_ptr<TestableObserver<T>> Start(std::function<Observable<T>()> create)
+        {
+            return Start(create, Created, Subscribed, Disposed);
+        }
+
+        template<class T>
         std::shared_ptr<TestableObserver<T>> Start(std::function<std::shared_ptr<Observable<T>>()> create, long created, long subscribed, long disposed)
         {
             auto observer = CreateObserver<T>();

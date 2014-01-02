@@ -1,4 +1,5 @@
 #include "cpprx/rx.hpp"
+
 namespace rx=rxcpp;
 
 #include "catch.hpp"
@@ -10,7 +11,7 @@ SCENARIO("return basic", "[return][operators]"){
 
         auto res = scheduler->Start<int>(
             [=]() { 
-                return rx::Return(42, scheduler);
+                return rx::just(42, scheduler);
             }
         );
 
@@ -37,7 +38,7 @@ SCENARIO("return disposed", "[return][operators]"){
         WHEN("return 42 after disposed"){
             auto res = scheduler->Start<int>(
                 [&]() { 
-                    return rx::Return(42, scheduler);
+                    return rx::just(42, scheduler);
                 },
                 200
             );
@@ -58,14 +59,14 @@ SCENARIO("return disposed after next", "[return][operators]"){
 
         rx::SerialDisposable d;
 
-        auto xs = rx::Return(42, scheduler);
+        auto xs = rx::just(42, scheduler);
 
         auto res = scheduler->CreateObserver<int>();
 
         scheduler->ScheduleAbsolute(
             100,
             [&](rx::Scheduler::shared) {
-                d.Set(from(xs).subscribe(
+                d.Set(xs.subscribe(
                     [&](int x){
                         d.Dispose(); res->OnNext(x);},
                     [&](){
@@ -97,10 +98,10 @@ SCENARIO("return observer throws", "[return][operators]"){
         auto scheduler = std::make_shared<rx::TestScheduler>();
         typedef rx::TestScheduler::Messages<int> m;
 
-        auto xs = rx::Return(42, scheduler);
+        auto xs = rx::just(42, scheduler);
 
         WHEN("subscribed to onnext that throws"){
-            from(xs).subscribe([](int){ throw std::runtime_error("onnext throws"); });
+            xs.subscribe([](int){ throw std::runtime_error("onnext throws"); });
 
             THEN("the exception is not supressed"){
                 REQUIRE_THROWS(scheduler->Start());
@@ -108,7 +109,7 @@ SCENARIO("return observer throws", "[return][operators]"){
         }
 
         WHEN("subscribed to oncompleted that throws"){
-            from(xs).subscribe([](int){},[](){ throw std::runtime_error("oncompleted throws"); });
+            xs.subscribe([](int){},[](){ throw std::runtime_error("oncompleted throws"); });
 
             THEN("the exception is not supressed"){
                 REQUIRE_THROWS(scheduler->Start());
